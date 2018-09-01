@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">photomaker</string>
+    <string name="dialog_ncp_button">Allow</string>
+    <string name="dialog_ncp_message">Using camera in this App is denied. Do you want to allow camera to take a photo?</string>
+    <string name="button_openfromgallery">Open image from gallery</string>
+    <string name="button_take_photo">Take photo</string>
+</resources>
