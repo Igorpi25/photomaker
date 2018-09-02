@@ -41,7 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class PhotoFiltersActivity extends AppCompatActivity {
+public class PhotoFiltersActivity extends AppCompatActivity implements View.OnClickListener {
 
     private ShareActionProvider mShareActionProvider;
 
@@ -60,7 +60,7 @@ public class PhotoFiltersActivity extends AppCompatActivity {
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
 
-    String[] myDataset={"Gray","Bright","White&Black"};
+    String[] myDataset={"No effect","Gray","Bright","WhiteBlack"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,14 +98,12 @@ public class PhotoFiltersActivity extends AppCompatActivity {
                 Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
                 if (imageUri != null) {
                     bmp = uriToBitmap(imageUri);
-                    normal(null);
+                    normal();
                 }
             }
         }
 
     }
-
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -148,103 +146,9 @@ public class PhotoFiltersActivity extends AppCompatActivity {
         }
     }
 
-    // Call to update the share intent
-    private void setShareIntent(Intent shareIntent) {
-        if (mShareActionProvider != null) {
-            mShareActionProvider.setShareIntent(shareIntent);
-        }
-    }
-    public void share(View view) {
-        Log.d("Igor log","share begin");
+    public void normal() {
 
-        saveImageToExternalStorage(operation);
-
-        Uri contentUri = FileProvider.getUriForFile(this, "com.ivanov.tech.photomaker.fileprovider", photoFile);
-
-        if (contentUri != null) {
-            Intent shareIntent = new Intent();
-            shareIntent.setAction(Intent.ACTION_SEND);
-            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // temp permission for receiving app to read this file
-            shareIntent.setDataAndType(contentUri, getContentResolver().getType(contentUri));
-            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-
-            startActivity(Intent.createChooser(shareIntent, "Choose an app"));
-        }
-
-        Log.d("Igor log","share end");
-    }
-
-    public void gray(View view) {
-        operation = Bitmap.createBitmap(bmp.getWidth(),bmp.getHeight(), bmp.getConfig());
-
-
-        for (int i = 0; i < bmp.getWidth(); i++) {
-            for (int j = 0; j < bmp.getHeight(); j++) {
-                int p = bmp.getPixel(i, j);
-                int r = Color.red(p);
-                int g = Color.green(p);
-                int b = Color.blue(p);
-
-                int m=(int)(((float)r+g+b)/3);
-
-                operation.setPixel(i, j, Color.argb(Color.alpha(p), m, m, m));
-            }
-        }
-        im.setImageBitmap(operation);
-    }
-
-    public void bright(View view){
-        operation= Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(),bmp.getConfig());
-
-        for(int i=0; i<bmp.getWidth(); i++){
-            for(int j=0; j<bmp.getHeight(); j++){
-                int p = bmp.getPixel(i, j);
-                int r = Color.red(p);
-                int g = Color.green(p);
-                int b = Color.blue(p);
-
-                float rate=2f;
-
-                r = (int)(r*rate);
-                g = (int)(g*rate);
-                b = (int)(b*rate);
-
-                r=(r>255)?255:r;
-                g=(g>255)?255:g;
-                b=(b>255)?255:b;
-
-                operation.setPixel(i, j, Color.argb(Color.alpha(p), r, g, b));
-            }
-        }
-        im.setImageBitmap(operation);
-    }
-
-    public void whiteAndBlack(View view){
-        operation= Bitmap.createBitmap(bmp.getWidth(),bmp.getHeight(),bmp.getConfig());
-
-        for(int i=0; i<bmp.getWidth(); i++){
-            for(int j=0; j<bmp.getHeight(); j++){
-                int p = bmp.getPixel(i, j);
-                int r = Color.red(p);
-                int g = Color.green(p);
-                int b = Color.blue(p);
-
-                float m=(r+g+b)/3.0f;
-
-                int branches=5;
-
-                int part=Math.round(m/255*(branches-1));
-
-                int v=part* (255/(branches-1));
-
-                operation.setPixel(i, j, Color.argb(Color.alpha(p), v, v, v));
-            }
-        }
-
-        im.setImageBitmap(operation);
-    }
-
-    public void normal(View view) {
+        //We remain this function until relation with old-code isno broken,  after refactoring I will remove it
 
         operation=Bitmap.createBitmap(bmp);
 
@@ -341,4 +245,12 @@ public class PhotoFiltersActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    public void onClick(View view) {
+        operation = Bitmap.createBitmap(bmp.getWidth(),bmp.getHeight(), bmp.getConfig());
+
+        //Here I will use algorithm of clicked item Effect
+
+        im.setImageBitmap(operation);
+    }
 }
