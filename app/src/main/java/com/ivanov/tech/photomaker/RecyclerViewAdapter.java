@@ -1,10 +1,12 @@
 package com.ivanov.tech.photomaker;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.MyViewHolder> {
     private String[] mDataset;
@@ -20,6 +22,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             super(v);
             layoutView = v;
             mTextView=layoutView.findViewById(R.id.textView);
+
+            v.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d("Igor log","ViewBinder click text="+ mTextView.getText().toString());
+                }
+            });
         }
     }
 
