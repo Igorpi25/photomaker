@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity">
+            android:name=".ui.CameraActivity">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,9 +21,9 @@
 
             </intent-filter>
         </activity>
-        <activity android:name=".PhotoFiltersActivity"
+        <activity android:name=".ui.PhotoEffectsActivity"
             android:screenOrientation="portrait"
-            android:parentActivityName="com.ivanov.tech.photomaker.MainActivity">
+            android:parentActivityName="com.ivanov.tech.photomaker.ui.CameraActivity">
             <intent-filter>
 
                 <action android:name="android.intent.action.SEND" />
@@ -35,7 +35,7 @@
             <!-- Parent activity meta-data to support 4.0 and lower -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.ivanov.tech.photomaker.MainActivity" />
+                android:value="com.ivanov.tech.photomaker.ui.CameraActivity" />
 
         </activity>
 

@@ -6,9 +6,15 @@ import android.graphics.Color;
 
 import com.ivanov.tech.photomaker.R;
 
+/*  Return gray-scaled picture where used limited number of colors
+    Every used color is like a branch in color scale. There are same distances between branches in color scale
+    Example 1: If we have two branches then there are two colors: white and black
+    Example 2: If we have three branches: white, black and gray(exactly in the gray-scale's center between black and white)
+*/
 public class EffectWhiteBlack implements Effect {
 
     Context mContext;
+    int mBranches=2; //Number of colors (white, black and shades of gray) that will be used
 
     public EffectWhiteBlack(Context context){
         mContext=context;
@@ -33,11 +39,9 @@ public class EffectWhiteBlack implements Effect {
 
                 float m=(r+g+b)/3.0f;
 
-                int branches=5;
+                int part=Math.round(m/255*(mBranches-1));
 
-                int part=Math.round(m/255*(branches-1));
-
-                int v=part* (255/(branches-1));
+                int v=part* (255/(mBranches-1));
 
                 resultBitmap.setPixel(i, j, Color.argb(Color.alpha(p), v, v, v));
             }

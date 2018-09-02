@@ -9,6 +9,7 @@ import com.ivanov.tech.photomaker.R;
 public class EffectBright implements Effect {
 
     Context mContext;
+    final float rate=2f; //Multiplier of RGB-colors
 
     public EffectBright(Context context){
         mContext=context;
@@ -31,12 +32,12 @@ public class EffectBright implements Effect {
                 int g = Color.green(p);
                 int b = Color.blue(p);
 
-                float rate=2f;
-
                 r = (int)(r*rate);
                 g = (int)(g*rate);
                 b = (int)(b*rate);
 
+                //  That used for result color will not "brigher" than 255(white).
+                // It prevents "artefacts" when result color more than 255
                 r=(r>255)?255:r;
                 g=(g>255)?255:g;
                 b=(b>255)?255:b;
