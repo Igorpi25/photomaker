@@ -8,7 +8,10 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -17,10 +20,19 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.ShareActionProvider;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileDescriptor;
@@ -30,6 +42,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class PhotoFiltersActivity extends AppCompatActivity {
+
+    private ShareActionProvider mShareActionProvider;
 
     Button b1, b2, b3;
     ImageView im;
@@ -42,19 +56,42 @@ public class PhotoFiltersActivity extends AppCompatActivity {
 
     final int reqWidth=300,reqHeight=300;
 
+    private RecyclerView mRecyclerView;
+    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
+
+    String[] myDataset={"Gray","Bright","White&Black"};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_filters);
 
-        b1 = (Button) findViewById(R.id.button);
-        b2 = (Button) findViewById(R.id.button2);
-        b3 = (Button) findViewById(R.id.button3);
-        im = (ImageView) findViewById(R.id.imageView);
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+
+        // Get a support ActionBar corresponding to this toolbar
+        ActionBar ab = getSupportActionBar();
+
+        // Enable the Up button
+        ab.setDisplayHomeAsUpEnabled(true);
 
         Intent intent = getIntent();
         String action = intent.getAction();
         String type = intent.getType();
+
+        File tempFilePath = Environment
+                .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        photoFile = new File(tempFilePath, TEMP_FILE_NAME);
+
+        im = (ImageView) findViewById(R.id.imageView);
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+        mRecyclerView.setHasFixedSize(true);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        mAdapter = new RecyclerViewAdapter(myDataset);
+        mRecyclerView.setAdapter(mAdapter);
 
         if (Intent.ACTION_SEND.equals(action) && type != null) {
             if (type.startsWith("image/")) {
@@ -66,9 +103,57 @@ public class PhotoFiltersActivity extends AppCompatActivity {
             }
         }
 
-
     }
 
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate menu resource file.
+        getMenuInflater().inflate(R.menu.menu_photo_filters_activity, menu);
+
+        // Locate MenuItem with ShareActionProvider
+        MenuItem item = menu.findItem(R.id.menu_item_share);
+
+        // Fetch and store ShareActionProvider
+        ShareActionProvider myShareActionProvider =
+                (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+
+        Uri contentUri = FileProvider.getUriForFile(this, "com.ivanov.tech.photomaker.fileprovider", photoFile);
+
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // temp permission for receiving app to read this file
+        shareIntent.setDataAndType(contentUri, "image/");
+        shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+
+        myShareActionProvider.setShareIntent(shareIntent);
+
+        // Return true to display menu
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_item_share:
+                // User chose the "Settings" item, show the app settings UI...
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+    // Call to update the share intent
+    private void setShareIntent(Intent shareIntent) {
+        if (mShareActionProvider != null) {
+            mShareActionProvider.setShareIntent(shareIntent);
+        }
+    }
     public void share(View view) {
         Log.d("Igor log","share begin");
 
@@ -82,6 +167,7 @@ public class PhotoFiltersActivity extends AppCompatActivity {
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // temp permission for receiving app to read this file
             shareIntent.setDataAndType(contentUri, getContentResolver().getType(contentUri));
             shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+
             startActivity(Intent.createChooser(shareIntent, "Choose an app"));
         }
 
@@ -193,9 +279,7 @@ public class PhotoFiltersActivity extends AppCompatActivity {
     public boolean saveImageToExternalStorage(Bitmap image) {
 
         try {
-            File tempFilePath = Environment
-                    .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-            photoFile = new File(tempFilePath, TEMP_FILE_NAME);
+
 
             OutputStream fOut = null;
             photoFile.createNewFile();
@@ -255,5 +339,6 @@ public class PhotoFiltersActivity extends AppCompatActivity {
         options.inJustDecodeBounds = false;
         return BitmapFactory.decodeFileDescriptor(descr, null, options);
     }
+
 
 }
