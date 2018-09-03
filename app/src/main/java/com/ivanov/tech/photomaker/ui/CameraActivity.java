@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
@@ -31,10 +32,12 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.ivanov.tech.photomaker.CommonSettings;
 import com.ivanov.tech.photomaker.R;
+import com.ivanov.tech.photomaker.effect.OnProgressListener;
 import com.ivanov.tech.photomaker.util.BitmapUtils;
 import com.ivanov.tech.photomaker.util.FileUtils;
 
@@ -68,7 +71,7 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_camera);
 
         mSurfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         mSurfaceView.setVisibility(View.INVISIBLE);
@@ -184,29 +187,7 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
 
         Log.d("Igor log", "onPictureTaken begin");
 
-        try {
-            //Picture came to us in bytes, we have to save it in file. Here we save in original-size (always it extremely large)
-            FileOutputStream fos = new FileOutputStream(mFileUsedToShare);
-            fos.write(data);
-            fos.close();
-
-            //Open saved original file, and reduce size to reqWidth and reqHeight
-            //If the display was in portrait orientation, when we click "takePhoto" we should rotate taken picture
-            FileInputStream is=new FileInputStream(mFileUsedToShare);
-            FileDescriptor fileDescriptor = is.getFD();
-            BitmapUtils.saveImageToExternalStorage(this,mFileUsedToShare,BitmapUtils.rotate(BitmapUtils.decodeSampledBitmapFromFile(fileDescriptor, CommonSettings.reqWidth, CommonSettings.reqHeight),
-                    mRotationOfTakenPhoto));
-
-            //Open targeted Activity with Image Effects
-            Uri contentUri = FileProvider.getUriForFile(this, "com.ivanov.tech.photomaker.fileprovider", mFileUsedToShare);
-            openPhotoFiltersActivity(contentUri);
-
-        } catch (Exception e) {
-
-            Log.d("Igor log", "onPictureTaken error e="+e.getMessage());
-
-            e.printStackTrace();
-        }
+        new TakePhotoTask().execute(data);
 
         Log.d("Igor log", "onPictureTaken end");
     }
@@ -378,6 +359,69 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
             Log.d("Igor logs","surfaceDestroyed");
+        }
+
+    }
+
+    private class TakePhotoTask extends AsyncTask<byte[], Integer, File> {
+
+        ProgressBar mProgressBar;
+        View mGroupProgress;
+
+        int mLastProgress;
+
+        protected void onPreExecute() {
+            mProgressBar=findViewById(R.id.progressBar);
+            mProgressBar.setProgress(0);
+
+            mGroupProgress=findViewById(R.id.group_progressbar);
+            mGroupProgress.setVisibility(View.VISIBLE);
+        }
+
+        protected File doInBackground(byte[]... datas) {
+
+            try {
+                //Picture came to us in bytes, we have to save it in file. Here we save in original-size (always it extremely large)
+                FileOutputStream fos = new FileOutputStream(mFileUsedToShare);
+                fos.write(datas[0]);
+                fos.close();
+
+                publishProgress(10);
+
+                //Open saved original file, and reduce size to reqWidth and reqHeight
+                //If the display was in portrait orientation, when we click "takePhoto" we should rotate taken picture
+                FileInputStream is=new FileInputStream(mFileUsedToShare);
+                FileDescriptor fileDescriptor = is.getFD();
+                BitmapUtils.saveImageToExternalStorage(CameraActivity.this,mFileUsedToShare,BitmapUtils.rotate(BitmapUtils.decodeSampledBitmapFromFile(fileDescriptor, CommonSettings.reqWidth, CommonSettings.reqHeight),
+                        mRotationOfTakenPhoto));
+                publishProgress(100);
+
+
+                //Open targeted Activity with Image Effects
+                Uri contentUri = FileProvider.getUriForFile(CameraActivity.this, "com.ivanov.tech.photomaker.fileprovider", mFileUsedToShare);
+                openPhotoFiltersActivity(contentUri);
+
+
+            } catch (Exception e) {
+
+                Log.d("Igor log", "onPictureTaken doInBackground error e="+e.getMessage());
+
+                e.printStackTrace();
+            }
+
+
+            return mFileUsedToShare;
+        }
+
+        protected void onProgressUpdate(Integer... progress) {
+            mProgressBar.setProgress(progress[0]);
+        }
+
+
+        protected void onPostExecute(File sharedFile) {
+
+            mGroupProgress.setVisibility(View.GONE);
+
         }
 
     }

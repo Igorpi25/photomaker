@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.ActivityCompat;
@@ -25,9 +26,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 
+import com.github.chrisbanes.photoview.PhotoView;
 import com.ivanov.tech.photomaker.R;
 import com.ivanov.tech.photomaker.adapter.EffectsListAdapter;
 import com.ivanov.tech.photomaker.effect.OnProgressListener;
@@ -37,7 +38,7 @@ import com.ivanov.tech.photomaker.effect.Effect;
 import com.ivanov.tech.photomaker.effect.EffectBright;
 import com.ivanov.tech.photomaker.effect.EffectGray;
 import com.ivanov.tech.photomaker.effect.EffectNothing;
-import com.ivanov.tech.photomaker.effect.EffectWhiteBlack;
+import com.ivanov.tech.photomaker.effect.EffectLimitedGray;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,7 +49,7 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
 
     ShareActionProvider mShareActionProvider;
     Intent mShareIntent;
-    ImageView mImageView;
+    PhotoView mImageView;
 
     private Bitmap mSourceBitmap;
     File mFileUsedToShare; //Here we save result bitmap like PNG-file every time when change current Effect
@@ -73,17 +74,18 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
         // Enable the Up button
         ab.setDisplayHomeAsUpEnabled(true);
 
-        mImageView = (ImageView) findViewById(R.id.imageView);
+        mImageView = (PhotoView) findViewById(R.id.photo_view);
 
         mListOfEffects =new ArrayList<Effect>();
         mListOfEffects.add(new EffectGray(this));
         mListOfEffects.add(new EffectBright(this));
-        mListOfEffects.add(new EffectWhiteBlack(this));
+        mListOfEffects.add(new EffectLimitedGray(this));
         mListOfEffects.add(new EffectNothing(this));
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(this);
+        mLayoutManager.offsetChildrenVertical(8);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mAdapter = new EffectsListAdapter(mListOfEffects,this);
         mRecyclerView.setAdapter(mAdapter);
@@ -214,6 +216,7 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
                 Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
                 if (imageUri != null) {
                     mSourceBitmap = BitmapUtils.uriToBitmap(this,imageUri);
+
                     mImageView.setImageBitmap(mSourceBitmap);
 
                     //In case if user click Share before use any Effect
@@ -254,7 +257,19 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
         }
 
         protected void onPostExecute(Bitmap effectedBitmap) {
+
+
+//            float scaleX=mImageView.getScaleX();
+//            float scaleY=mImageView.getScaleY();
+//            float scale=mImageView.getScale();
+//            mImageView.setImageBitmap(effectedBitmap);
+//            mImageView.setScale(scale,scaleX,scaleY,false);
+
+            Matrix matrix=new Matrix();
+            mImageView.getSuppMatrix(matrix);
             mImageView.setImageBitmap(effectedBitmap);
+            mImageView.setSuppMatrix(matrix);
+
             mGroupProgress.setVisibility(View.GONE);
         }
 

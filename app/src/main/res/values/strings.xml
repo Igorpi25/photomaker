@@ -5,10 +5,10 @@
     <string name="button_openfromgallery">Open image from gallery</string>
     <string name="button_take_photo">Take photo</string>
 
-    <string name="effect_nothhing_name">No effect</string>
+    <string name="effect_nothhing_name">Clear effect</string>
     <string name="effect_gray_name">Gray</string>
     <string name="effect_bright_name">Bright</string>
-    <string name="effect_whiteblack_name">White Black</string>
+    <string name="effect_whiteblack_name">Limited Gray</string>
 
     <string name="dialog_permission_camera_title">Permission issue</string>
     <string name="dialog_permission_camera_message">Camera is denied for App. Do you want allow camera to this App?</string>

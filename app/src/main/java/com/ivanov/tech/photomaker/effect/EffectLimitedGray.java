@@ -11,12 +11,12 @@ import com.ivanov.tech.photomaker.R;
     Example 1: If we have two branches then there are two colors: white and black
     Example 2: If we have three branches: white, black and gray(exactly in the gray-scale's center between black and white)
 */
-public class EffectWhiteBlack implements Effect {
+public class EffectLimitedGray implements Effect {
 
     Context mContext;
-    int mBranches=2; //Number of colors (white, black and shades of gray) that will be used
+    int mBranches=4; //Number of colors (white, black and shades of gray) that will be used
 
-    public EffectWhiteBlack(Context context){
+    public EffectLimitedGray(Context context){
         mContext=context;
     }
 
