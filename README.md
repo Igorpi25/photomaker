@@ -5,19 +5,38 @@ Demo App of Camera and Bitmap's visual effects
 
 How does it work?
 -----------------
-- When you start Photo Maker you'll see this activity:
 
-(Camera preview, and two buttons. Activity support landscape and portrait modes)
+### CameraActivity
+When you start Photo Maker you'll see this activity. 
 
-- After taking photo, or choosing existing one you will automatically redirected to:
+<img src="screenshots/camera_portrait.png" height="250" />
 
-(Picture that I shot just now by camera. Below you see List of Effects)
+Activity supports landscape mode:
 
-- You will find that you can apply one of these visual effects to Image:
+<img src="screenshots/camera_landscape.png" width="200" />
 
-(This is not too fast, but works. When you click on last item, effect will be cleaned and you'll see source image again)
+After taking photo, or choosing existing one you will automatically redirected to:
 
-- When you click on the "Share" button you'll see that it really works
+### PhotoEffectActivity
+
+<img src="screenshots/effect_original.png" height="250" />
+
+### Visual effect (handwritten algorithm)
+You will find that you can apply one of these visual effects to Image. For example, "Gray::
+
+<img src="screenshots/effect_gray.png" height="250" />
+
+### ShareProvider
+
+When you click on the "Share" button you'll see that it really works:
+
+<img src="screenshots/share_clicked.png" height="250" />
+
+### IntentFilter
+
+Close PhotoMaker App, and open any photo in your device's Gallery. If you now click on "Share" you'll see that App is here:
+
+<img src="screenshots/intent_filter.png" height="250" />
 
 Modules
 -------
