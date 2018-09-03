@@ -1,7 +1,7 @@
 Photo Maker
 ===========
 
-Demononstration of Camera and Bitmap working. When you start app you will see the CameraActivity 
+Demo App of Camera and Bitmap's visual effects
 
 How does it work?
 -----------------
@@ -66,11 +66,17 @@ You can change the size of redusing in src/CommonSettings. Also you can really o
 
 UI
 --
-(not ready)
+- Used standart Material Design elements provided by SupportLibrary
+
+Links
+-----
+
+- [chrisbanes/PhotoView][1] used in PhotoFiltersActivty to zoom image
 
 License
 -------
 
 See the [LICENSE](LICENSE) file for license rights and limitations (Apache).
 
+[1]:https://github.com/chrisbanes/PhotoView
 [11]:https://play.google.com/store/apps/details?id=com.ivanov.tech.chat
