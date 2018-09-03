@@ -1,7 +1,14 @@
 Photo Maker
 ===========
 
-Demo App of Camera and Bitmap's visual effects
+
+<img src="screenshots/banner_github.png" height="200" />
+
+Demonstration of Camera and Bitmap's visual effects
+
+Install Demo App from [GooglePlay][11]
+
+[<img src="screenshots/google_play_icon.png" height="60" />][11]
 
 How does it work?
 -----------------
@@ -98,4 +105,4 @@ License
 See the [LICENSE](LICENSE) file for license rights and limitations (Apache).
 
 [1]:https://github.com/chrisbanes/PhotoView
-[11]:https://play.google.com/store/apps/details?id=com.ivanov.tech.chat
+[11]:https://play.google.com/store/apps/details?id=com.ivanov.tech.photomaker
