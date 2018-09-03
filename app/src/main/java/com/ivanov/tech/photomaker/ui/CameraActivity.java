@@ -1,6 +1,7 @@
 package com.ivanov.tech.photomaker.ui;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -8,6 +9,7 @@ import android.net.Uri;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -36,20 +38,22 @@ import com.ivanov.tech.photomaker.R;
 import com.ivanov.tech.photomaker.util.BitmapUtils;
 import com.ivanov.tech.photomaker.util.FileUtils;
 
-// Working with camera use code from lesson's(132-134) of startandroid.ru. Source code was changed, but original comments(in russian) are saved
+// Working with mCamera use code from lesson's(132-134) of startandroid.ru. Source code was changed, but original comments(in russian) are saved
 public class CameraActivity extends AppCompatActivity implements Camera.PictureCallback{
 
-    SurfaceView sv;
-    SurfaceHolder holder;
-    HolderCallback holderCallback;
-    Camera camera;
+    SurfaceView mSurfaceView;
+    SurfaceHolder mSurfaceHolder;
+    HolderCallback mHolderCallback;
+    Camera mCamera;
 
-    final int CAMERA_ID = 0;//ID of camera in device. Example: 0-back, 1-front(self)
+    final int CAMERA_ID = 0;//ID of mCamera in device. Example: 0-back, 1-front(self)
     final boolean FULL_SCREEN = true; //Is preview display fullscreen?
 
     File mFileUsedToShare; //Here we save result bitmap like PNG-file every time when change current Effect
 
-    final int PERMISSIONS_REQUEST_CAMERA_AND_EXTERNAL_WRITE = 1;//constant to identify permissions callback after user action
+    final int PERMISSIONS_REQUEST_CAMERA = 1;//constant to identify permissions for camera
+    final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 2;//constant to identify permission for SD card
+
     final int REQUEST_EXISTING_IMAGE_OPEN_USING_GALLERY = 1;//constant to identify result image from external App(Gallery, File manager, etc)
 
     int mRotationOfTakenPhoto =0; //Here we save of rotation in degrees (0,90,180,270).
@@ -66,33 +70,57 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
 
-        sv = (SurfaceView) findViewById(R.id.surfaceView);
-        holder = sv.getHolder();
-        holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        mSurfaceView = (SurfaceView) findViewById(R.id.surfaceView);
+        mSurfaceView.setVisibility(View.INVISIBLE);
+        mSurfaceHolder = mSurfaceView.getHolder();
+        mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 
-        holderCallback = new HolderCallback();
+        mHolderCallback = new HolderCallback();
 
         mFileUsedToShare = FileUtils.getTempFile();
 
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+
+        Log.d("Igor log","onStart");
+
+        checkPermissionSD();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
 
-        checkPermissionsAndIfAllRightStartCamera(false);
+        Log.d("Igor log","onResume");
 
+        if((ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)== PackageManager.PERMISSION_GRANTED)
+        &&(ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED)){
+            // Permission is not granted
+            Log.d("Igor logs","onResume all permissions are grant ");
+
+            mCamera = Camera.open(CAMERA_ID);
+            setPreviewSize(FULL_SCREEN);
+
+            mSurfaceView.setVisibility(View.VISIBLE);
+            mSurfaceHolder.addCallback(mHolderCallback);
+        }else{
+            Log.d("Igor logs","onResume all permissions are not grant ");
+
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        if (camera != null) {
-            camera.release();
-            camera = null;
+        if (mCamera != null) {
+            mCamera.release();
+            mCamera = null;
 
-            holder.removeCallback(holderCallback);
+            mSurfaceHolder.removeCallback(mHolderCallback);
 
         }
     }
@@ -101,21 +129,52 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
-            case PERMISSIONS_REQUEST_CAMERA_AND_EXTERNAL_WRITE:
+            case PERMISSIONS_REQUEST_CAMERA:
 
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //Good! User grant some permission to App. We don't that all Permissions were granted, so try again to check it and if all right start camera
-                    checkPermissionsAndIfAllRightStartCamera(false);
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    //Good! User grant some permission to App. We don't that all Permissions were granted, so try again to check it and if all right start mCamera
+
+                    Log.d("Igor logs","onRequestPermissionsResult.Camera User grant permission to App");
+
+                    setPermissionCameraMessageVisibible(false);
+                } else {
+
+                    Log.d("Igor logs","onRequestPermissionsResult.Camera User manually denied permission request");
+
+                    // User manually denied some permission request
+
+                    Log.d("Igor logs","onRequestPermissionsResult.Camera set camera prmission text-message visible");
+                    setPermissionCameraMessageVisibible(true);
+
+                }
+                break;
+
+            case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE:
+
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    //Good! User grant some permission to App. We don't that all Permissions were granted, so try again to check it and if all right start mCamera
+
+                    Log.d("Igor logs","onRequestPermissionsResult.SD User grant permission to App");
+                    Log.d("Igor logs","onRequestPermissionsResult.SD now check camera permission");
+                    checkPermissionCamera();
 
                 } else {
-                    // User manually denied some permission request
-                    // So we will not force him, show NCP(Message) and let him choose photo from Gallery without using camera
-                    setGroupNCPVisibility(true);
-                }
 
-                return;
+                    Log.d("Igor logs","onRequestPermissionsResult.SD User manually denied permission request");
+
+                    // User manually denied some permission request
+                    // So we will not force him
+
+                    Log.d("Igor logs","onRequestPermissionsResult.SD show App Close dialog");
+                    showCloseAppMessage();
+
+                }
+                break;
+
+
+
         }
 
     }
@@ -167,19 +226,15 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
         }
     }
 
-    public void onClickAllowPermissions(View view) {
-        checkPermissionsAndIfAllRightStartCamera(true);
-    }
-
     public void onClickTakePicture(View view) {
 
-        //If NCP-group's is visibility it means some permission is not granted. So we can't call takePicture
-        if(findViewById(R.id.group_ncp).getVisibility()!=View.VISIBLE) {
 
-            camera.takePicture(null, null, this);//Taken photo will be got in onPictureTaken-method
+        if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)== PackageManager.PERMISSION_GRANTED) {
+
+            mCamera.takePicture(null, null, this);//Taken photo will be got in onPictureTaken-method
         }else{
             //Show message about permissions and Allow-button
-            Toast.makeText(this,R.string.camera_takephoto_permission_denied_message,Toast.LENGTH_LONG).show();
+            Toast.makeText(this,R.string.takephoto_camera_permission_denied_message,Toast.LENGTH_LONG).show();
         }
 
     }
@@ -201,7 +256,7 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
         boolean widthIsMax = display.getWidth() > display.getHeight();
 
         // определяем размеры превью камеры
-        Size size = camera.getParameters().getPreviewSize();
+        Size size = mCamera.getParameters().getPreviewSize();
 
         RectF rectDisplay = new RectF();
         RectF rectPreview = new RectF();
@@ -234,8 +289,8 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
         matrix.mapRect(rectPreview);
 
         // установка размеров surface из получившегося преобразования
-        sv.getLayoutParams().height = (int) (rectPreview.bottom);
-        sv.getLayoutParams().width = (int) (rectPreview.right);
+        mSurfaceView.getLayoutParams().height = (int) (rectPreview.bottom);
+        mSurfaceView.getLayoutParams().width = (int) (rectPreview.right);
     }
 
     void setCameraDisplayOrientation(int cameraId) {
@@ -273,10 +328,10 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
                 result += 360;
             }
         result = result % 360;
-        camera.setDisplayOrientation(result);
+        mCamera.setDisplayOrientation(result);
 
         // Here we save rotation of display.
-        // We'll use this stored rotation when photo will taken from camera in portrait orientation
+        // We'll use this stored rotation when photo will taken from mCamera in portrait orientation
         mRotationOfTakenPhoto =result;
 
 
@@ -295,10 +350,12 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
             try {
-                camera.setPreviewDisplay(holder);
-                camera.startPreview();
+                Log.d("Igor logs","surfaceCreated begin");
+                mCamera.setPreviewDisplay(holder);
+                mCamera.startPreview();
+                Log.d("Igor logs","surfaceCreated success");
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.d("Igor logs","surfaceCreated error="+e.toString());
             }
         }
 
@@ -307,69 +364,183 @@ public class CameraActivity extends AppCompatActivity implements Camera.PictureC
                                    int height) {
 
             try {
-                camera.stopPreview();
+                Log.d("Igor logs","surfaceChanged begin");
+                mCamera.stopPreview();
                 setCameraDisplayOrientation(CAMERA_ID);
-                camera.setPreviewDisplay(holder);
-                camera.startPreview();
+                mCamera.setPreviewDisplay(holder);
+                mCamera.startPreview();
+                Log.d("Igor logs","surfaceChanged success");
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.d("Igor logs","surfaceChanged error="+e.toString());
             }
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-
+            Log.d("Igor logs","surfaceDestroyed");
         }
 
     }
 
-    void checkPermissionsAndIfAllRightStartCamera(boolean should_request_anyway) {
+    //---------------Permissions processing--------------
 
-        if ((ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)!= PackageManager.PERMISSION_GRANTED)
-                || (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED) ) {
+    void checkPermissionCamera() {
+
+        if (ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)!= PackageManager.PERMISSION_GRANTED) {
 
             // Permission is not granted
+            Log.d("Igor logs","checkPermissionCamera Permission is not granted ");
 
-            Log.d("Igor logs","Permission is not granted");
-
-            // Should we show an NCP-group?
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.CAMERA) && ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE) && !should_request_anyway) {
-                Log.d("Igor logs","Show NCP group explanation");
+                    Manifest.permission.CAMERA)) {
+                Log.d("Igor logs","checkPermissionCamera show NCP");
 
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-                setGroupNCPVisibility(true);
+                showPermissionCameraDialog();
 
-            } else {
+            }else{
+                Log.d("Igor logs","checkPermissionCamera Make request");
 
-                Log.d("Igor logs","No explanation need");
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.CAMERA,Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        PERMISSIONS_REQUEST_CAMERA_AND_EXTERNAL_WRITE);
-
+                ActivityCompat.requestPermissions(CameraActivity.this,
+                        new String[]{Manifest.permission.CAMERA},
+                        PERMISSIONS_REQUEST_CAMERA);
             }
+
         } else {
             // Permission has already been granted
+            Log.d("Igor logs","checkPermissionCamera Permission has already been granted");
 
-            Log.d("Igor logs","Permission has already been granted");
+            Log.d("Igor logs","checkPermissionCamera hide NPC group");
+            setPermissionCameraMessageVisibible(false);
+        }
 
-            camera = Camera.open(CAMERA_ID);
-            setPreviewSize(FULL_SCREEN);
-            holder.addCallback(holderCallback);
+    }
 
-            setGroupNCPVisibility(false);
+    void checkPermissionSD() {
+
+        if (ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED) {
+
+            // Permission is not granted
+            Log.d("Igor logs","checkPermissionSD Permission is not granted ");
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                Log.d("Igor logs","checkPermissionSD show NCP");
+
+                showPermissionSDDialog();
+
+            }else{
+                Log.d("Igor logs","checkPermissionSD Make request");
+
+                ActivityCompat.requestPermissions(CameraActivity.this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+            }
+
+        } else {
+            // Permission has already been granted
+            Log.d("Igor logs","checkPermissionSD Permission has already been granted");
+            Log.d("Igor logs","checkPermissionSD now check camera permission");
+            checkPermissionCamera();
         }
 
     }
 
     //Show or hide group "No Camera Permission"(NCP) when any permission is denied
-    void setGroupNCPVisibility(boolean value){
-        findViewById(R.id.group_ncp).setVisibility(value?View.VISIBLE:View.GONE);
+    void setPermissionCameraMessageVisibible(boolean value){
+        findViewById(R.id.textView_ncp_messsage).setVisibility(value?View.VISIBLE:View.GONE);
     }
 
+    void showPermissionCameraDialog(){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setMessage(R.string.dialog_permission_camera_message)
+                .setTitle(R.string.dialog_permission_camera_title);
+
+        // Add the buttons
+        builder.setPositiveButton(R.string.dialog_permission_camera_yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+
+                dialog.dismiss();
+
+                ActivityCompat.requestPermissions(CameraActivity.this,
+                        new String[]{Manifest.permission.CAMERA},
+                        PERMISSIONS_REQUEST_CAMERA);
+
+            }
+        });
+        builder.setNegativeButton(R.string.dialog_permission_camera_no, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+                setPermissionCameraMessageVisibible(true);
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+
+
+    }
+
+    void showPermissionSDDialog(){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setMessage(R.string.dialog_permission_sd_message)
+                .setTitle(R.string.dialog_permission_sd_title);
+
+        // Add the buttons
+        builder.setPositiveButton(R.string.dialog_permission_sd_yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+
+                dialog.dismiss();
+
+                ActivityCompat.requestPermissions(CameraActivity.this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+
+            }
+        });
+        builder.setNegativeButton(R.string.dialog_permission_sd_no, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+                CameraActivity.this.finish();
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+    }
+
+    void showCloseAppMessage(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setMessage(R.string.dialog_permission_close_app_message)
+                .setTitle(R.string.dialog_permission_close_app_title);
+
+        builder.setPositiveButton(R.string.dialog_permission_close_app_quit, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+                CameraActivity.this.finish();
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+    }
 
 }

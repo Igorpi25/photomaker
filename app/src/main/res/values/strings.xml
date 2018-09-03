@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Photo Maker</string>
     <string name="dialog_ncp_button">Allow</string>
-    <string name="dialog_ncp_message">Using camera in this App is denied. Do you want to allow camera to take a photo?</string>
+
     <string name="button_openfromgallery">Open image from gallery</string>
     <string name="button_take_photo">Take photo</string>
 
@@ -9,5 +9,24 @@
     <string name="effect_gray_name">Gray</string>
     <string name="effect_bright_name">Bright</string>
     <string name="effect_whiteblack_name">White Black</string>
-    <string name="camera_takephoto_permission_denied_message">Sorry, you can\'t take photo, cause access to camera or write on external storage is denied. Click "Allow" button to grant these permissions</string>
+
+    <string name="dialog_permission_camera_title">Permission issue</string>
+    <string name="dialog_permission_camera_message">Camera is denied for App. Do you want allow camera to this App?</string>
+    <string name="dialog_permission_camera_yes">Yes, allow</string>
+    <string name="dialog_permission_camera_no">Cancel</string>
+
+    <string name="dialog_permission_sd_title">Permission issue</string>
+    <string name="dialog_permission_sd_message">App need access to SD card to save temp files. Do you allow app to save files in SD?</string>
+    <string name="dialog_permission_sd_yes">Yes, allow</string>
+    <string name="dialog_permission_sd_no">Quit</string>
+
+    <string name="dialog_permission_close_app_title">Permission issue</string>
+    <string name="dialog_permission_close_app_message">Sorry, App will be closed. Cause user manually denied SD permission for this App. Please, open device Settings and allow SD permission to App</string>
+    <string name="dialog_permission_close_app_quit">Quit</string>
+
+    <string name="dialog_ncp_message">Camera is denied for this App. Please, activate the camera permission in App settings of device</string>
+    <string name="takephoto_camera_permission_denied_message">Sorry, you can\'t take photo. You need to activate camera permission for App in your device settings</string>
+
+    <string name="sd_permission_denied_message">You need to activate SD access to App before</string>
+
 </resources>

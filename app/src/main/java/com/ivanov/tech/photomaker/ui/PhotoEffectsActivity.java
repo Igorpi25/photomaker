@@ -1,11 +1,17 @@
 package com.ivanov.tech.photomaker.ui;
 
+import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.provider.MediaStore;
+import android.os.AsyncTask;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -20,9 +26,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import com.ivanov.tech.photomaker.R;
 import com.ivanov.tech.photomaker.adapter.EffectsListAdapter;
+import com.ivanov.tech.photomaker.effect.OnProgressListener;
 import com.ivanov.tech.photomaker.util.BitmapUtils;
 import com.ivanov.tech.photomaker.util.FileUtils;
 import com.ivanov.tech.photomaker.effect.Effect;
@@ -32,19 +40,17 @@ import com.ivanov.tech.photomaker.effect.EffectNothing;
 import com.ivanov.tech.photomaker.effect.EffectWhiteBlack;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 
 public class PhotoEffectsActivity extends AppCompatActivity implements View.OnClickListener {
 
+    final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 2;//constant to identify permission for SD card
+
     ShareActionProvider mShareActionProvider;
     Intent mShareIntent;
-
     ImageView mImageView;
 
-    private Bitmap mSourceBitmapFromIntent;
-
+    private Bitmap mSourceBitmap;
     File mFileUsedToShare; //Here we save result bitmap like PNG-file every time when change current Effect
 
     private RecyclerView mRecyclerView;
@@ -56,7 +62,7 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_photo_filters);
+        setContentView(R.layout.activity_photo_effects);
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
@@ -68,14 +74,6 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
         ab.setDisplayHomeAsUpEnabled(true);
 
         mImageView = (ImageView) findViewById(R.id.imageView);
-
-
-        Intent intent = getIntent();
-        String action = intent.getAction();
-        String type = intent.getType();
-
-        mFileUsedToShare = FileUtils.getTempFile();
-
 
         mListOfEffects =new ArrayList<Effect>();
         mListOfEffects.add(new EffectGray(this));
@@ -90,29 +88,15 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
         mAdapter = new EffectsListAdapter(mListOfEffects,this);
         mRecyclerView.setAdapter(mAdapter);
 
-        if (Intent.ACTION_SEND.equals(action) && type != null) {
-            if (type.startsWith("image/")) {
-                Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
-                if (imageUri != null) {
-                    mSourceBitmapFromIntent = BitmapUtils.uriToBitmap(this,imageUri);
-                    mImageView.setImageBitmap(mSourceBitmapFromIntent);
-
-                    saveImageToExternalStorage(mSourceBitmapFromIntent);//In case if user click Share before use any Effect
-                }
-            }
-        }
-
     }
 
-    void sharedImageChanged(Bitmap bitmap){
+    @Override
+    protected void onStart() {
+        super.onStart();
 
-        //Image has changed! Update the intent
-        //P.S: Not in my case, cause i use only one file. The name of file will never change. but it may be needed in future
+        Log.d("Igor log","onStart");
 
-        saveImageToExternalStorage(bitmap);
-        Uri contentUri = FileProvider.getUriForFile(this, "com.ivanov.tech.photomaker.fileprovider", mFileUsedToShare);
-        mShareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-        mShareActionProvider.setShareIntent(mShareIntent);
+        checkPermissionSD();
     }
 
     @Override
@@ -126,15 +110,9 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
         // Fetch and store ShareActionProvider
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
 
-        Uri contentUri = FileProvider.getUriForFile(this, "com.ivanov.tech.photomaker.fileprovider", mFileUsedToShare);
-
         mShareIntent = new Intent();
         mShareIntent.setAction(Intent.ACTION_SEND);
         mShareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // temp permission for receiving app to read this file
-        mShareIntent.setDataAndType(contentUri, "image/");
-        mShareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-
-        mShareActionProvider.setShareIntent(mShareIntent);
 
         // Return true to display menu
         return true;
@@ -156,44 +134,219 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE:
+
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    //Good! User grant some permission to App. We don't that all Permissions were granted, so try again to check it and if all right start mCamera
+
+                    Log.d("Igor logs","onRequestPermissionsResult.SD User grant permission to App");
+                    Log.d("Igor logs","onRequestPermissionsResult.SD now check camera permission");
+
+                    loadPictureFromIntent();
+
+                } else {
+
+                    Log.d("Igor logs","onRequestPermissionsResult.SD User manually denied permission request");
+
+                    // User manually denied some permission request
+                    // So we will not force him
+
+                    Log.d("Igor logs","onRequestPermissionsResult.SD show App Close dialog");
+                    showCloseAppMessage();
+
+                }
+                break;
+
+
+
+        }
+
+    }
+
+    @Override
     public void onClick(View view) {
 
         Integer index=(Integer)view.getTag(EffectsListAdapter.TAG_INDEX);
 
         Log.d("Igor log","ViewBinder click we get in Activity index="+index);
 
-        //Here I use algorithm of clicked item Effect, and apply result bitmap to ImageView
-        Bitmap effectedBitmap= mListOfEffects.get(index).getEffectedBitmap(mSourceBitmapFromIntent);
-        mImageView.setImageBitmap(effectedBitmap);
+        //Here I use algorithm of clicked item Effect, and apply result bitmap to ImageView asynchronously
+        new EffectApplyTask().execute(index);
 
 
-        // SHARE-code-part
-        sharedImageChanged(effectedBitmap);
     }
 
-    public boolean saveImageToExternalStorage(Bitmap image) {
+    void sharedImageChanged(Bitmap bitmap){
 
-        try {
+        //Image has changed! Update the intent
+        //P.S: Not in my case, cause i use only one file. The name of file will never change. but it may be needed in future
 
 
-            OutputStream fOut = null;
-            mFileUsedToShare.createNewFile();
-            fOut = new FileOutputStream(mFileUsedToShare);
+        BitmapUtils.saveImageToExternalStorage(this,mFileUsedToShare,bitmap);
+        Uri contentUri = FileProvider.getUriForFile(this, "com.ivanov.tech.photomaker.fileprovider", mFileUsedToShare);
+        mShareIntent.setDataAndType(contentUri, "image/");
+        mShareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+        mShareActionProvider.setShareIntent(mShareIntent);
+    }
 
-            // 100 means no compression, the lower you go, the stronger the compression
-            image.compress(Bitmap.CompressFormat.PNG, 100, fOut);
-            fOut.flush();
-            fOut.close();
+    void loadPictureFromIntent(){
 
-            MediaStore.Images.Media.insertImage(this.getContentResolver(), mFileUsedToShare.getAbsolutePath(), mFileUsedToShare.getName(), mFileUsedToShare.getName());
+        mFileUsedToShare = FileUtils.getTempFile();
 
-            return true;
+        Intent intent = getIntent();
+        String action = intent.getAction();
+        String type = intent.getType();
 
-        } catch (Exception e) {
-            Log.e("saveToExternalStorage()", e.getMessage());
-            return false;
+        if (Intent.ACTION_SEND.equals(action) && type != null) {
+            if (type.startsWith("image/")) {
+                Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+                if (imageUri != null) {
+                    mSourceBitmap = BitmapUtils.uriToBitmap(this,imageUri);
+                    mImageView.setImageBitmap(mSourceBitmap);
+
+                    //In case if user click Share before use any Effect
+                    sharedImageChanged(mSourceBitmap);
+
+                }
+            }
         }
     }
 
+    private class EffectApplyTask extends AsyncTask<Integer, Integer, Bitmap> implements OnProgressListener{
+
+        ProgressBar mProgressBar;
+        View mGroupProgress;
+
+        int mLastProgress;
+
+        protected void onPreExecute() {
+            mProgressBar=findViewById(R.id.progressBar);
+            mProgressBar.setProgress(0);
+
+            mGroupProgress=findViewById(R.id.group_progressbar);
+            mGroupProgress.setVisibility(View.VISIBLE);
+        }
+
+        protected Bitmap doInBackground(Integer... indexes) {
+
+            Bitmap effectedBitmap= mListOfEffects.get(indexes[0]).getEffectedBitmap(mSourceBitmap,this);
+
+            // SHARE-code-part
+            sharedImageChanged(effectedBitmap);
+
+            return effectedBitmap;
+        }
+
+        protected void onProgressUpdate(Integer... progress) {
+            mProgressBar.setProgress(progress[0]);
+        }
+
+        protected void onPostExecute(Bitmap effectedBitmap) {
+            mImageView.setImageBitmap(effectedBitmap);
+            mGroupProgress.setVisibility(View.GONE);
+        }
+
+        @Override
+        public void onProgressChanged(int changed) {
+            if(changed!=mLastProgress) {
+                publishProgress(changed);
+                mLastProgress=changed;
+            }
+        }
+    }
+
+    //--------------Permissions proccessing---------------
+
+
+    void checkPermissionSD() {
+
+        if (ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED) {
+
+            // Permission is not granted
+            Log.d("Igor logs","checkPermissionSD Permission is not granted ");
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                Log.d("Igor logs","checkPermissionSD show NCP");
+
+                showPermissionSDDialog();
+
+            }else{
+                Log.d("Igor logs","checkPermissionSD Make request");
+
+                ActivityCompat.requestPermissions(PhotoEffectsActivity.this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+            }
+
+        } else {
+            // Permission has already been granted
+            Log.d("Igor logs","checkPermissionSD Permission has already been granted");
+            Log.d("Igor logs","checkPermissionSD now check camera permission");
+
+            loadPictureFromIntent();
+        }
+
+    }
+
+    void showPermissionSDDialog(){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setMessage(R.string.dialog_permission_sd_message)
+                .setTitle(R.string.dialog_permission_sd_title);
+
+        // Add the buttons
+        builder.setPositiveButton(R.string.dialog_permission_sd_yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+
+                dialog.dismiss();
+
+                ActivityCompat.requestPermissions(PhotoEffectsActivity.this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+
+            }
+        });
+        builder.setNegativeButton(R.string.dialog_permission_sd_no, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+                PhotoEffectsActivity.this.finish();
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+    }
+
+    void showCloseAppMessage(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setMessage(R.string.dialog_permission_close_app_message)
+                .setTitle(R.string.dialog_permission_close_app_title);
+
+        builder.setPositiveButton(R.string.dialog_permission_close_app_quit, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+                PhotoEffectsActivity.this.finish();
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+    }
 
 }

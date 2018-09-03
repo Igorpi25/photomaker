@@ -22,6 +22,11 @@ public class EffectNothing implements Effect {
 
     @Override
     public Bitmap getEffectedBitmap(Bitmap sourceBitmap) {
+        return getEffectedBitmap(sourceBitmap,null);
+    }
+
+    @Override
+    public Bitmap getEffectedBitmap(Bitmap sourceBitmap, OnProgressListener progressListener) {
 
         //We should create a copy of sourceBitmap anyway to save origin bitmap (sourceBitmap)
         Bitmap resultBitmap = sourceBitmap.copy(sourceBitmap.getConfig(),true);

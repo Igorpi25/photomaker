@@ -43,6 +43,13 @@ Also you can open existing image from gallery(or same other app in device). Afte
 - PhotoEffectActivity is the main-targeted module that works with visual effects using image's Bitmap. You can apply image-filters to image. 
 This activity available for other external apps from your device. You can send image file from other app by click "Share" function
 
+Permissions
+--------------
+There are two permissions required in App: CAMERA, WRITE_EXTERNAL_STORAGE(SD).
+When CameraActivity starting it require permission for SD at first. If permission will not be grant then App finish itself.
+When user grands camera-permission it starts to require second SD permission. SD-permission is unlike of camera-permission doesn't finish App even when user deny required camera permission,
+instead of that it shows the TextView with static message. That is necessary for user to open an existing photo from the gallery
+
 IntentProvider
 --------------
 You can send any image to Photo Maker app, using "Share" function from other Apps. 

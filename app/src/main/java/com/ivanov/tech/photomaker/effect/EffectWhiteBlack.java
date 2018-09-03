@@ -27,10 +27,19 @@ public class EffectWhiteBlack implements Effect {
 
     @Override
     public Bitmap getEffectedBitmap(Bitmap sourceBitmap) {
+        return  getEffectedBitmap(sourceBitmap,null);
+    }
 
+    @Override
+    public Bitmap getEffectedBitmap(Bitmap sourceBitmap, OnProgressListener progressListener) {
         Bitmap resultBitmap = Bitmap.createBitmap(sourceBitmap.getWidth(),sourceBitmap.getHeight(), sourceBitmap.getConfig());
 
         for(int i=0; i<sourceBitmap.getWidth(); i++){
+
+            if(progressListener!=null){
+                progressListener.onProgressChanged(i*100/sourceBitmap.getWidth());
+            }
+
             for(int j=0; j<sourceBitmap.getHeight(); j++){
                 int p = sourceBitmap.getPixel(i, j);
                 int r = Color.red(p);
@@ -45,6 +54,7 @@ public class EffectWhiteBlack implements Effect {
 
                 resultBitmap.setPixel(i, j, Color.argb(Color.alpha(p), v, v, v));
             }
+
         }
 
         return resultBitmap;

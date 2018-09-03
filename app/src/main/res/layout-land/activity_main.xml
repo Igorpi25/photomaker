@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/background_dark"
     tools:layout_editor_absoluteY="73dp">
 
     <SurfaceView
@@ -19,36 +20,16 @@
         android:id="@+id/textView_ncp_messsage"
         android:layout_width="185dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:gravity="center"
         android:text="@string/dialog_ncp_message"
-        app:layout_constraintBottom_toTopOf="@+id/button_ncp_allow"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView" />
-
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="180dp"
-        app:layout_constraintBottom_toTopOf="@+id/textView_ncp_messsage"
-        app:layout_constraintEnd_toEndOf="@+id/button_ncp_allow"
-        app:layout_constraintStart_toStartOf="@+id/button_ncp_allow"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_camera" />
-
-    <Button
-        android:id="@+id/button_ncp_allow"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="183dp"
-        android:onClick="onClickAllowPermissions"
-        android:text="@string/dialog_ncp_button"
+        android:textColor="@android:color/darker_gray"
+        android:textStyle="bold"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/textView_ncp_messsage"
-        app:layout_constraintStart_toStartOf="@+id/textView_ncp_messsage"
-        app:layout_constraintTop_toBottomOf="@+id/textView_ncp_messsage" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
         android:id="@+id/imagebutton_openfromgallery"
@@ -77,12 +58,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <android.support.constraint.Group
-        android:id="@+id/group_ncp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="visible"
-        app:constraint_referenced_ids="imageView,button_ncp_allow,textView_ncp_messsage" />
 
 </android.support.constraint.ConstraintLayout>
