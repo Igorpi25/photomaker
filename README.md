@@ -2,7 +2,7 @@ Photo Maker
 ===========
 
 
-<img src="screenshots/banner_github.png" height="200" />
+<img src="screenshots/banner.png" height="200" />
 
 Demonstration of Camera and Bitmap's visual effects
 
