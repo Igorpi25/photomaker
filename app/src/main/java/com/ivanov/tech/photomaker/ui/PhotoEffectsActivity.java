@@ -84,9 +84,11 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         mRecyclerView.setHasFixedSize(true);
+
         mLayoutManager = new LinearLayoutManager(this);
         mLayoutManager.offsetChildrenVertical(8);
         mRecyclerView.setLayoutManager(mLayoutManager);
+
         mAdapter = new EffectsListAdapter(mListOfEffects,this);
         mRecyclerView.setAdapter(mAdapter);
 
