@@ -31,6 +31,8 @@ public class EffectNothing implements Effect {
         //We should create a copy of sourceBitmap anyway to save origin bitmap (sourceBitmap)
         Bitmap resultBitmap = sourceBitmap.copy(sourceBitmap.getConfig(),true);
 
+        progressListener.onProgressChanged(100);
+
         return resultBitmap;
     }
 

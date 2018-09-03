@@ -88,6 +88,10 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
         mAdapter = new EffectsListAdapter(mListOfEffects,this);
         mRecyclerView.setAdapter(mAdapter);
 
+        mShareIntent = new Intent();
+        mShareIntent.setAction(Intent.ACTION_SEND);
+        mShareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // temp permission for receiving app to read this file
+
     }
 
     @Override
@@ -101,6 +105,9 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+
+        Log.d("Igor log","onCreateOptionsMenu");
+
         // Inflate menu resource file.
         getMenuInflater().inflate(R.menu.menu_photo_filters_activity, menu);
 
@@ -109,10 +116,9 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
 
         // Fetch and store ShareActionProvider
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        if((mShareIntent!=null)&&(mSourceBitmap!=null))
+            mShareActionProvider.setShareIntent(mShareIntent);
 
-        mShareIntent = new Intent();
-        mShareIntent.setAction(Intent.ACTION_SEND);
-        mShareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // temp permission for receiving app to read this file
 
         // Return true to display menu
         return true;
@@ -190,7 +196,9 @@ public class PhotoEffectsActivity extends AppCompatActivity implements View.OnCl
         Uri contentUri = FileProvider.getUriForFile(this, "com.ivanov.tech.photomaker.fileprovider", mFileUsedToShare);
         mShareIntent.setDataAndType(contentUri, "image/");
         mShareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-        mShareActionProvider.setShareIntent(mShareIntent);
+
+        if(mShareActionProvider!=null)
+            mShareActionProvider.setShareIntent(mShareIntent);
     }
 
     void loadPictureFromIntent(){
