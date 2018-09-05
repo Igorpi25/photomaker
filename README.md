@@ -1,9 +1,6 @@
 Photo Maker
 ===========
 
-
-<img src="screenshots/banner.png" height="200" />
-
 Demonstration of Camera and Bitmap's visual effects
 
 Install Demo App from [GooglePlay][11]
